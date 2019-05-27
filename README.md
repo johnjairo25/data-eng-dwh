@@ -13,6 +13,13 @@ goals:
 - Improve analytical query performance.
 - Have the capacity to perform analytical operations over the data.
 
+## Contents of the repo
+
+- `sql_queries.py`: contains all the SQL statements for the project.
+- `create_tables.py`:  python script that creates all the tables of the project.
+- `etl.py`: python script that executes the SQL script process.
+- `dwh.cfg`: example file of how the configuration should look like.
+
 ## Running the project
 
 1. Execute the `create_tables.py` script
