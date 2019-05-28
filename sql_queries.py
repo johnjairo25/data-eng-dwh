@@ -30,7 +30,7 @@ CREATE TABLE staging_event(
     gender              varchar(1),
     item_in_session     integer,
     last_name           varchar,
-    length              decimal,
+    length              double precision,
     level               varchar,
     location            varchar,
     method              varchar,
@@ -42,22 +42,22 @@ CREATE TABLE staging_event(
     ts                  bigint,
     user_agent          varchar,
     user_id             integer
-)
+);
 """)
 
 staging_songs_table_create = ("""
 CREATE TABLE staging_song(
     num_songs              integer,
     artist_id              varchar,
-    artist_latitude        varchar,
-    artist_longitude       varchar,
+    artist_latitude        float,
+    artist_longitude       float,
     artist_location        varchar,
     artist_name            varchar,
     song_id                varchar,
     title                  varchar,
-    duration               decimal,
+    duration               float,
     year                   integer
-)
+);
 """)
 
 
@@ -75,7 +75,6 @@ CREATE TABLE songplay(
     location          varchar(64),
     user_agent        varchar(256),
     PRIMARY KEY (songplay_id),
-    FOREIGN KEY (start_time) REFERENCES "time"(start_time),
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (song_id) REFERENCES song(song_id),
     FOREIGN KEY (artist_id) REFERENCES artist(artist_id)
@@ -153,6 +152,7 @@ insert into songplay(start_time, user_id, "level", song_id, artist_id,
 		se.session_id, se.location, se.user_agent
 	from staging_event se
 		left join staging_song ss on (se.song = ss.title or se.artist = ss.artist_name)
+	where se.page = 'NextSong';
 """)
 
 
@@ -165,7 +165,7 @@ insert into users(user_id, first_name, last_name, gender, "level")
 			rows between unbounded preceding and unbounded following
 		) as "level"
 	from staging_event
-	where user_id is not null
+	where user_id is not null and page = 'NextSong';
 """)
 
 song_table_insert = ("""
@@ -181,20 +181,20 @@ insert into artist(artist_id, name, location, latitude, longitude)
 		CAST(artist_latitude as DOUBLE PRECISION) latitude, 
 		CAST(artist_longitude as DOUBLE PRECISION) longitude
 	from staging_song
-	where artist_id is not null
+	where artist_id is not null;
 """)
 
 time_table_insert = ("""
 insert into time(start_time, hour, day, week, month, year, weekday)
-	select distinct ts as start_time,
-	  extract(hour from (timestamp 'epoch' + ts/1000 * interval '1 second')) as "hour",
-	  extract(day from (timestamp 'epoch' + ts/1000 * interval '1 second')) as "day",
-	  extract(hour from (timestamp 'epoch' + ts/1000 * interval '1 second')) as "week",
-	  extract(month from (timestamp 'epoch' + ts/1000 * interval '1 second')) as "month",
-	  extract(year from (timestamp 'epoch' + ts/1000 * interval '1 second')) as "year",
-	  extract(weekday from (timestamp 'epoch' + ts/1000 * interval '1 second')) as "weekday"
-	from staging_event
-    where ts is not null
+	select distinct start_time,
+	  extract(hour from (timestamp 'epoch' + start_time/1000 * interval '1 second')) as "hour",
+	  extract(day from (timestamp 'epoch' + start_time/1000 * interval '1 second')) as "day",
+	  extract(hour from (timestamp 'epoch' + start_time/1000 * interval '1 second')) as "week",
+	  extract(month from (timestamp 'epoch' + start_time/1000 * interval '1 second')) as "month",
+	  extract(year from (timestamp 'epoch' + start_time/1000 * interval '1 second')) as "year",
+	  extract(weekday from (timestamp 'epoch' + start_time/1000 * interval '1 second')) as "weekday"
+	from songplay
+	where start_time is not null;
 """)
 
 # QUERY LISTS
